@@ -2,12 +2,13 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Grid } from 'react-loader-spinner';
-
 import { Tile } from './Tile';
 
 const imageUrl = '/el-diente-is-the-favorite.webp';
 
-
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(() => resolve(null), ms));
+}
 
 interface ImageDimProps {
   height: number;
@@ -17,8 +18,11 @@ interface ImageDimProps {
 export default function Home() {
   const [imageDims, setImageDims] = useState<ImageDimProps | null>(null);
 
-  function onImageLoad(event: { currentTarget: HTMLImageElement }) {
+  async function onImageLoad(event: { currentTarget: HTMLImageElement }) {
     const image = event.currentTarget;
+    
+    await delay(300);
+
 
     setImageDims({
       height: image.naturalHeight,

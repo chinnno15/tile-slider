@@ -5,47 +5,68 @@ interface TileProps {
   baseImageWidth: number;
 }
 
-export const Tile: React.FC<TileProps> = ({ imageUrl, index = 0, baseImageHeight, baseImageWidth }) => {
-  console.log([baseImageHeight, baseImageWidth])
+export const Tile: React.FC<TileProps> = ({
+  imageUrl,
+  index = 0,
+  baseImageHeight,
+  baseImageWidth,
+}) => {
+  const tileWidth = -100;
+  let minImageDim = 0;
+
+  if (baseImageHeight > baseImageWidth) {
+    minImageDim = baseImageWidth;
+  } else {
+    minImageDim = baseImageHeight;
+  }
 
   let bpX = '';
   let bpY = '';
   const modulo = index % 3;
 
   if (modulo == 0) {
-    bpX = '0px';
+    bpX = `${tileWidth * 0}px`;
   }
 
   if (modulo == 1) {
-    bpX = '33px';
+    bpX = `${tileWidth * 1}px`;
   }
 
   if (modulo == 2) {
-    bpX = '66px';
+    bpX = `${tileWidth * 2}px`;
   }
 
-  const row = Math.round(index / 3);
+  const row = Math.floor(index / 3);
 
   const rowModulo = row % 3;
 
   if (rowModulo == 0) {
-    bpY = '0px';
+    bpY = `${tileWidth * 0}px`;
   }
 
   if (rowModulo == 1) {
-    bpY = '33px';
+    bpY = `${tileWidth * 1}px`;
   }
 
   if (rowModulo == 2) {
-    bpY = '66px';
+    bpY = `${tileWidth * 2}px`;
   }
 
-  return (
-    <div className="tile"
-      style={{
-        backgroundImage: `url(${imageUrl})`,
-        backgroundPositionX: bpX,
-        backgroundPositionY: bpY
-      }}></div>
-  );
+
+  const bgProps = {
+    backgroundImage: `url(${imageUrl})`,
+    backgroundPositionX: `${bpX}`,
+    backgroundPositionY: `${bpY}`,
+    backgroundSize: '300%',
+  };
+
+  // console.log(JSON.stringify({
+  //   index,
+  //   row,
+  //   modulo, 
+  //   rowModulo,
+  //   ...bgProps
+  // }, null, 2))
+
+  return <div className='tile' style={bgProps} id={`tile-${index}`}></div>;
 };
