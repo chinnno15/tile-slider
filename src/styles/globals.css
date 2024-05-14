@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.tile { 
+  width: 100px;
+  height: 100px;
+  border-radius: 4px;
+  mask-size: 100%;
+  background-position: 33%;
+  /* background-image: url("${imageUrl}"); */
+}

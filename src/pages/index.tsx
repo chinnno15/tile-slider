@@ -1,12 +1,30 @@
-// import { Dialog } from '@headlessui/react';
-// import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Head from 'next/head';
-import Image from 'next/image'
+import Image from 'next/image';
 import { useState } from 'react';
- 
+import { Grid } from 'react-loader-spinner';
+
+import { Tile } from './Tile';
+
+const imageUrl = '/el-diente-is-the-favorite.webp';
+
+
+
+interface ImageDimProps {
+  height: number;
+  width: number;
+}
 
 export default function Home() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [imageDims, setImageDims] = useState<ImageDimProps | null>(null);
+
+  function onImageLoad(event: { currentTarget: HTMLImageElement }) {
+    const image = event.currentTarget;
+
+    setImageDims({
+      height: image.naturalHeight,
+      width: image.naturalWidth
+    });
+  }
 
   return (
     <>
@@ -22,7 +40,48 @@ export default function Home() {
       </Head>
       <div className='isolate bg-white'>
         <main>
-        <Image src="/el-diente-is-the-favorite.webp" alt='' height={500} width={500}></Image>    
+          <div className='container w-96 mx-auto'>
+            <div className='mt-8'>
+              <h1 className='text-center'>Tile Slider</h1>
+            </div>
+            <div className='w-80 my-12 mx-auto'>
+              {imageDims ? (
+                <div className='grid grid-cols-3 gap-2'>
+                  {[...Array(9).keys()].map((ix) => (
+                    <Tile key={ix} 
+                    imageUrl={imageUrl}
+                    index={ix} 
+                    baseImageHeight={imageDims.height}
+                    baseImageWidth={imageDims.width}></Tile>
+                  ))}
+                </div>
+              ) : (
+                <div className='w-full'>
+                  <div className='w-12 mx-auto'>
+                    <Grid
+                      visible={true}
+                      height='80'
+                      width='80'
+                      color='#4fa94d'
+                      ariaLabel='grid-loading'
+                      radius='12.5'
+                      wrapperStyle={{}}
+                      wrapperClass='grid-wrapper'
+                    />
+                  </div>
+                  
+                  <Image
+                    src={imageUrl}
+                    alt=''
+                    height={500}
+                    width={500}
+                    className='invisible'
+                    onLoad={onImageLoad}
+                  ></Image>
+                </div>
+              )}
+            </div>
+          </div>
         </main>
       </div>
     </>
