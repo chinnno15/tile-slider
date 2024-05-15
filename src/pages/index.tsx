@@ -1,35 +1,9 @@
 import Head from 'next/head';
-import Image from 'next/image';
-import { useState } from 'react';
-import { Grid } from 'react-loader-spinner';
-import { Tile } from './Tile';
+import TileSlider from './TileSlider';
 
 const imageUrl = '/el-diente-is-the-favorite.webp';
 
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(() => resolve(null), ms));
-}
-
-interface ImageDimProps {
-  height: number;
-  width: number;
-}
-
 export default function Home() {
-  const [imageDims, setImageDims] = useState<ImageDimProps | null>(null);
-
-  async function onImageLoad(event: { currentTarget: HTMLImageElement }) {
-    const image = event.currentTarget;
-    
-    await delay(300);
-
-
-    setImageDims({
-      height: image.naturalHeight,
-      width: image.naturalWidth
-    });
-  }
-
   return (
     <>
       <Head>
@@ -48,43 +22,7 @@ export default function Home() {
             <div className='mt-8'>
               <h1 className='text-center'>Tile Slider</h1>
             </div>
-            <div className='w-80 my-12 mx-auto'>
-              {imageDims ? (
-                <div className='grid grid-cols-3 gap-2'>
-                  {[...Array(9).keys()].map((ix) => (
-                    <Tile key={ix} 
-                    imageUrl={imageUrl}
-                    index={ix} 
-                    baseImageHeight={imageDims.height}
-                    baseImageWidth={imageDims.width}></Tile>
-                  ))}
-                </div>
-              ) : (
-                <div className='w-full'>
-                  <div className='w-12 mx-auto'>
-                    <Grid
-                      visible={true}
-                      height='80'
-                      width='80'
-                      color='#4fa94d'
-                      ariaLabel='grid-loading'
-                      radius='12.5'
-                      wrapperStyle={{}}
-                      wrapperClass='grid-wrapper'
-                    />
-                  </div>
-                  
-                  <Image
-                    src={imageUrl}
-                    alt=''
-                    height={500}
-                    width={500}
-                    className='invisible'
-                    onLoad={onImageLoad}
-                  ></Image>
-                </div>
-              )}
-            </div>
+            <TileSlider imageUrl={imageUrl}></TileSlider>
           </div>
         </main>
       </div>

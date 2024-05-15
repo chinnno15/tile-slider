@@ -1,23 +1,29 @@
 import {
-  ArrowLeftCircleIcon, 
   ArrowDownCircleIcon,
+  ArrowLeftCircleIcon,
   ArrowRightCircleIcon,
-  ArrowUpCircleIcon
-} from '@heroicons/react/24/solid'
+  ArrowUpCircleIcon,
+} from '@heroicons/react/24/solid';
 import { useState } from 'react';
+
+import { TileDirection } from './lib';
+
+export type onPositionChangeCallback = (direction: TileDirection) => void;
 
 interface TileProps {
   imageUrl: string;
   index?: number;
   baseImageHeight: number;
   baseImageWidth: number;
+  onPositionChange: onPositionChangeCallback;
 }
 
 export const Tile: React.FC<TileProps> = ({
   imageUrl,
   index = 0,
   baseImageHeight,
-  baseImageWidth
+  baseImageWidth,
+  onPositionChange,
 }) => {
   const [controlsEnabled, setControlsEnabled] = useState(false);
   const tileWidth = -100;
@@ -61,7 +67,6 @@ export const Tile: React.FC<TileProps> = ({
     bpY = `${tileWidth * 2}px`;
   }
 
-
   const bgProps = {
     backgroundImage: `url(${imageUrl})`,
     backgroundPositionX: `${bpX}`,
@@ -72,31 +77,47 @@ export const Tile: React.FC<TileProps> = ({
   // console.log(JSON.stringify({
   //   index,
   //   row,
-  //   modulo, 
+  //   modulo,
   //   rowModulo,
   //   ...bgProps
   // }, null, 2))
 
   return (
-    <div className='relative z-0' 
-    onMouseEnter={()=>setControlsEnabled(true)}
-    onMouseLeave={()=>setControlsEnabled(false)}>
+    <div
+      className='relative z-0'
+      onMouseEnter={() => setControlsEnabled(true)}
+      onMouseLeave={() => setControlsEnabled(false)}
+    >
       {controlsEnabled ? (
         <div>
-          <div className='absolute top-10 left-1 flex z-10'>
+          <div
+            className='absolute top-10 left-1 flex z-10'
+            onClick={() => onPositionChange(TileDirection.Left)}
+          >
             <ArrowLeftCircleIcon className='text-gray-500 h-6 w-6'></ArrowLeftCircleIcon>
           </div>
-          <div className='absolute bottom-1 right-10 flex z-10'>
+          <div
+            className='absolute bottom-1 right-10 flex z-10'
+            onClick={() => onPositionChange(TileDirection.Down)}
+          >
             <ArrowDownCircleIcon className='text-gray-500 h-6 w-6'></ArrowDownCircleIcon>
           </div>
-          <div className='absolute right-1 top-10 flex z-10'>
+          <div
+            className='absolute right-1 top-10 flex z-10'
+            onClick={() => onPositionChange(TileDirection.Right)}
+          >
             <ArrowRightCircleIcon className='text-gray-500 h-6 w-6'></ArrowRightCircleIcon>
           </div>
-          <div className='absolute top-1 right-10 flex z-10'>
+          <div
+            className='absolute top-1 right-10 flex z-10'
+            onClick={() => onPositionChange(TileDirection.Up)}
+          >
             <ArrowUpCircleIcon className='text-gray-500 h-6 w-6'></ArrowUpCircleIcon>
           </div>
         </div>
-      ):(<></>)}
+      ) : (
+        <></>
+      )}
 
       <div className='tile' style={bgProps} id={`tile-${index}`}></div>
     </div>
