@@ -8,11 +8,27 @@ import { useState } from 'react';
 
 import { TileDirection } from './lib';
 
-export type onPositionChangeCallback = (direction: TileDirection) => void;
+export interface ITileState {
+  tileIx: number;
+  rowIx: number;
+  imgIx: number;
+  hasMoveUp: boolean;
+  hasMoveRight: boolean;
+  hasMoveLeft: boolean;
+  hasMoveDown: boolean;
+  empty: boolean;
+}
 
-interface TileProps {
+export interface onPositionChangeCallbackInputs {
+  direction: TileDirection;
+  rowIx: number;
+  tileIx: number;
+}
+
+export type onPositionChangeCallback = (input: onPositionChangeCallbackInputs) => void;
+
+interface TileProps extends ITileState{
   imageUrl: string;
-  index?: number;
   baseImageHeight: number;
   baseImageWidth: number;
   onPositionChange: onPositionChangeCallback;
@@ -20,12 +36,14 @@ interface TileProps {
 
 export const Tile: React.FC<TileProps> = ({
   imageUrl,
-  index = 0,
+  imgIx = 0,
   baseImageHeight,
   baseImageWidth,
   onPositionChange,
+  empty = false,
+  rowIx,
+  tileIx
 }) => {
-  const [controlsEnabled, setControlsEnabled] = useState(false);
   const tileWidth = -100;
   let minImageDim = 0;
 
@@ -37,7 +55,7 @@ export const Tile: React.FC<TileProps> = ({
 
   let bpX = '';
   let bpY = '';
-  const modulo = index % 3;
+  const modulo = imgIx % 3;
 
   if (modulo == 0) {
     bpX = `${tileWidth * 0}px`;
@@ -51,7 +69,7 @@ export const Tile: React.FC<TileProps> = ({
     bpX = `${tileWidth * 2}px`;
   }
 
-  const row = Math.floor(index / 3);
+  const row = Math.floor(imgIx / 3);
 
   const rowModulo = row % 3;
 
@@ -74,52 +92,24 @@ export const Tile: React.FC<TileProps> = ({
     backgroundSize: '300%',
   };
 
-  // console.log(JSON.stringify({
-  //   index,
-  //   row,
-  //   modulo,
-  //   rowModulo,
-  //   ...bgProps
-  // }, null, 2))
+  const tileProps = {
+    tileIx,
+    rowIx
+  }
 
   return (
-    <div
-      className='relative z-0'
-      onMouseEnter={() => setControlsEnabled(true)}
-      onMouseLeave={() => setControlsEnabled(false)}
-    >
-      {controlsEnabled ? (
-        <div>
-          <div
-            className='absolute top-10 left-1 flex z-10'
-            onClick={() => onPositionChange(TileDirection.Left)}
-          >
-            <ArrowLeftCircleIcon className='text-gray-500 h-6 w-6'></ArrowLeftCircleIcon>
-          </div>
-          <div
-            className='absolute bottom-1 right-10 flex z-10'
-            onClick={() => onPositionChange(TileDirection.Down)}
-          >
-            <ArrowDownCircleIcon className='text-gray-500 h-6 w-6'></ArrowDownCircleIcon>
-          </div>
-          <div
-            className='absolute right-1 top-10 flex z-10'
-            onClick={() => onPositionChange(TileDirection.Right)}
-          >
-            <ArrowRightCircleIcon className='text-gray-500 h-6 w-6'></ArrowRightCircleIcon>
-          </div>
-          <div
-            className='absolute top-1 right-10 flex z-10'
-            onClick={() => onPositionChange(TileDirection.Up)}
-          >
-            <ArrowUpCircleIcon className='text-gray-500 h-6 w-6'></ArrowUpCircleIcon>
-          </div>
+    <div>
+      {!empty && (
+        <div
+          className='relative z-0'
+          onClick={() => onPositionChange({
+            direction: TileDirection.Left,
+            ...tileProps
+            })}
+        >
+          <div className='tile' style={bgProps} id={`tile-${imgIx}`}></div>
         </div>
-      ) : (
-        <></>
       )}
-
-      <div className='tile' style={bgProps} id={`tile-${index}`}></div>
     </div>
   );
 };

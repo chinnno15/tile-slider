@@ -22,7 +22,9 @@ export default function Home() {
             <div className='mt-8'>
               <h1 className='text-center'>Tile Slider</h1>
             </div>
-            <TileSlider imageUrl={imageUrl}></TileSlider>
+            <TileSlider 
+              imageUrl={imageUrl}
+              saveState={true}></TileSlider>
           </div>
         </main>
       </div>
