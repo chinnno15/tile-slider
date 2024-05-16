@@ -12,15 +12,10 @@ export interface ITileState {
   tileIx: number;
   rowIx: number;
   imgIx: number;
-  hasMoveUp: boolean;
-  hasMoveRight: boolean;
-  hasMoveLeft: boolean;
-  hasMoveDown: boolean;
   empty: boolean;
 }
 
 export interface onPositionChangeCallbackInputs {
-  direction: TileDirection;
   rowIx: number;
   tileIx: number;
 }
@@ -102,10 +97,7 @@ export const Tile: React.FC<TileProps> = ({
       {!empty && (
         <div
           className='relative z-0'
-          onClick={() => onPositionChange({
-            direction: TileDirection.Left,
-            ...tileProps
-            })}
+          onClick={() => onPositionChange(tileProps)}
         >
           <div className='tile' style={bgProps} id={`tile-${imgIx}`}></div>
         </div>

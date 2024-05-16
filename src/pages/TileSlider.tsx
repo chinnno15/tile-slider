@@ -6,7 +6,7 @@ import Button from './components/Button';
 import { delay, TileDirection } from './lib';
 import { onPositionChangeCallbackInputs, Tile } from './Tile';
 import { ITileState } from './Tile';
-import { pick } from 'lodash';
+import { cloneDeep, pick } from 'lodash';
 
 interface ImageDimProps {
   height: number;
@@ -16,10 +16,6 @@ interface ImageDimProps {
 class TileState implements ITileState {
   imgIx: number;
   empty: boolean;
-  hasMoveLeft: boolean;
-  hasMoveRight: boolean;
-  hasMoveUp: boolean;
-  hasMoveDown: boolean;
   rowIx: number;
   tileIx: number;
 
@@ -29,15 +25,10 @@ class TileState implements ITileState {
     this.tileIx = 0;
     this.rowIx = 0;
     this.empty = empty ? empty : false;
-
-    this.hasMoveLeft = false;
-    this.hasMoveRight = false;
-    this.hasMoveDown = false;
-    this.hasMoveUp = false;
   }
 }
 
-const tilesInitial: TileState[][] = [
+const tilesInitial: [TileState[], TileState[], TileState[]]  = [
   [
     new TileState({ imgIx: 0, empty: false }),
     new TileState({ imgIx: 1, empty: false }),
@@ -69,7 +60,7 @@ function getRandomItem<T>(array: T[]): { item: T; index: number } {
   return { item, index: randomIndex };
 }
 
-function initTileStates(state: TileState[][]) {
+function initTileStates(state: [TileState[], TileState[], TileState[]]) {
   // random empty tile
   const flatState = state.flat();
 
@@ -83,66 +74,12 @@ function initTileStates(state: TileState[][]) {
     tile.empty = true;
   }
 
-  state = validateMoves(state);
-
-  return state;
-}
-
-function validateMoves(state: TileState[][]) {
-  // console.log(JSON.stringify(state, null, 2))
-
-  let whiteTile = null;
-
   for (let rowIx = 0; rowIx < state.length; rowIx++) {
     const row = state[rowIx] || [];
-    const rowLen = row.length;
-
     for (let tileIx = 0; tileIx < row.length; tileIx++) {
-      const tile = row[tileIx] || ({} as ITileState);
-      const tileLen = row.length;
-
-      if (tile.empty) {
-        whiteTile = tile;
-      }
-
-      tile.rowIx = rowIx;
+      const tile = row[tileIx] || {rowIx: 0, tileIx: 0};
+      tile.rowIx = rowIx; 
       tile.tileIx = tileIx;
-
-      if (rowIx == whiteTile?.rowIx) {
-        tile.hasMoveLeft = true;
-        tile.hasMoveRight = true;
-      }
-
-      if (tileIx == whiteTile?.tileIx) {
-        tile.hasMoveDown = true;
-        tile.hasMoveUp = true;
-      }
-
-      if (rowIx == 0) {
-        tile.hasMoveUp = false;
-      }
-
-      if (rowIx == rowLen - 1) {
-        tile.hasMoveDown = false;
-      }
-
-      if (tileIx == whiteTile?.tileIx && rowIx + 1 == whiteTile.rowIx) {
-        tile.hasMoveUp = true;
-        tile.hasMoveDown = false;
-      }
-
-      if (tileIx == whiteTile?.tileIx && rowIx - 1 == whiteTile.rowIx) {
-        tile.hasMoveUp = true;
-        tile.hasMoveDown = false;
-      }
-
-      // if (tileIx == 0) {
-      //   tile.hasMoveLeft = false;
-      // }
-
-      // if (tileIx == tileLen - 1) {
-      //   tile.hasMoveRight = false;
-      // }
     }
   }
 
@@ -153,14 +90,16 @@ interface TileSliderProps {
   imageUrl: string;
 }
 
-
-
 const TileSlider: React.FC<TileSliderProps> = (input) => {
   const { imageUrl } = input;
   const [imageDims, setImageDims] = useState<ImageDimProps | null>(null);
-  const [tiles, setTiles] = useState<TileState[][] | null>(initTileStates(tilesInitial))
+  const [tiles, setTiles] = useState<[TileState[], TileState[], TileState[]]>(
+    initTileStates(tilesInitial),
+  );
+  const [whiteTileIx, setWhiteTileIx] = useState(0);
 
-   async function onImageLoad(event: { currentTarget: HTMLImageElement }) {
+
+  async function onImageLoad(event: { currentTarget: HTMLImageElement }) {
     const image = event.currentTarget;
 
     await delay(600);
@@ -176,27 +115,33 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
   }
 
   function moveToWhiteTile(opts: {
-      tiles: TileState[][],
-      inputs: onPositionChangeCallbackInputs,
-      tile: ITileState,
-      whiteTile: ITileState
-    }) {
-    const {inputs, tile, whiteTile } = opts;
+    tiles: [TileState[], TileState[], TileState[]];
+    inputs: onPositionChangeCallbackInputs;
+    tile: ITileState;
+    whiteTile: ITileState;
+  }) {
+    const { tiles, inputs, tile, whiteTile } = opts;
+    const oldWhiteTile = {...whiteTile};
+    const oldTile = {...tile};
+
+    whiteTile.rowIx = tile.rowIx; 
+    whiteTile.tileIx = tile.tileIx
+
     tile.rowIx = inputs.rowIx;
     tile.tileIx = inputs.tileIx;
 
-    // console.log(JSON.stringify(tile, null, 2));
+    tiles[oldWhiteTile.rowIx][oldWhiteTile.tileIx] = tile;
+    tiles[oldTile.rowIx][oldTile.tileIx] = whiteTile;
 
-    // tiles[whiteTile.rowIx][whiteTile.tileIx] = tile;
-    // tiles[tile.rowIx][tile.tileIx] = whiteTile;
-    console.log('moved tile!!');
-
-    setTiles(tiles)
+    setTiles(tiles);
   }
 
   function onTilePositionChange(inputs: onPositionChangeCallbackInputs) {
-    const state = tiles;
-    let whiteTile = null;
+    const state = tiles || [[], [], []];
+
+    let whiteTile = state.flat().filter((tile) => tile.empty)[0];
+
+    setWhiteTileIx(state.flat().indexOf(whiteTile)); 
 
     for (let rowIx = 0; rowIx < state.length; rowIx++) {
       const row = state[rowIx] || [];
@@ -207,34 +152,15 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
         if (tile.empty) {
           whiteTile = tile;
         }
-        
-        if(whiteTile) {
-          moveToWhiteTile({tiles, inputs, tile, whiteTile });
+
+        if (tile.tileIx == inputs.tileIx && tile.rowIx == inputs.rowIx &&
+          whiteTile
+        ) {
+          if (!tile.empty) {
+            return moveToWhiteTile({ 
+              tiles, inputs, tile, whiteTile });
+          }
         }
-
-        // if (tile.tileIx == inputs.tileIx) {
-        //   if (!tile.empty && whiteTile) {
-        //     if (inputs.rowIx == whiteTile.rowIx) {
-        //       // const data = [[inputs], tile.tileIx, tile.rowIx, whiteTile.rowIx]
-        //       // console.log(JSON.stringify(data))
-
-        //       // console.log('## in here ##')
-
-        //       if(inputs.tileIx != whiteTile.tileIx &&
-        //          Math.abs(whiteTile.tileIx - inputs.tileIx) == 1) {
-        //         // move to newIx
-        //         // console.log('## in here ##')
-        //         moveToWhiteTile({tiles: state, inputs, tile, whiteTile });
-
-        //       }
-
-        //     }
-        //     // if (tile.Ix - 1 == whiteTile.tileIx) {
-        //     //   moveToWhiteTile({ tile, whiteTile });
-        //     // }
-
-        //   }
-        // }
       }
     }
   }
@@ -243,7 +169,7 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
     <div className='w-80 my-12 mx-auto'>
       {imageDims && tiles ? (
         <div>
-          <div className='grid grid-cols-3 gap-2'>
+          <div className='grid grid-cols-3 gap-2' datawhitetileix={whiteTileIx}>
             {tiles.flat().map((tile: ITileState) => (
               <Tile
                 key={tile.imgIx}
@@ -253,10 +179,6 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
                 onPositionChange={onTilePositionChange}
                 baseImageHeight={imageDims.height}
                 baseImageWidth={imageDims.width}
-                hasMoveDown={tile.hasMoveDown}
-                hasMoveUp={tile.hasMoveUp}
-                hasMoveLeft={tile.hasMoveLeft}
-                hasMoveRight={tile.hasMoveRight}
                 tileIx={tile.tileIx}
                 rowIx={tile.rowIx}
               ></Tile>
