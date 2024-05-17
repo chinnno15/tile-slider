@@ -1,3 +1,6 @@
+import {
+  CheckCircleIcon
+} from '@heroicons/react/24/solid';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Grid } from 'react-loader-spinner';
@@ -28,7 +31,7 @@ class TileState implements ITileState {
   }
 }
 
-const tilesInitial: [TileState[], TileState[], TileState[]]  = [
+const tilesInitial: [TileState[], TileState[], TileState[]] = [
   [
     new TileState({ imgIx: 0, empty: false }),
     new TileState({ imgIx: 1, empty: false }),
@@ -77,8 +80,8 @@ function initTileStates(state: [TileState[], TileState[], TileState[]]) {
   for (let rowIx = 0; rowIx < state.length; rowIx++) {
     const row = state[rowIx] || [];
     for (let tileIx = 0; tileIx < row.length; tileIx++) {
-      const tile = row[tileIx] || {rowIx: 0, tileIx: 0};
-      tile.rowIx = rowIx; 
+      const tile = row[tileIx] || { rowIx: 0, tileIx: 0 };
+      tile.rowIx = rowIx;
       tile.tileIx = tileIx;
     }
   }
@@ -92,12 +95,27 @@ interface TileSliderProps {
 
 const TileSlider: React.FC<TileSliderProps> = (input) => {
   const { imageUrl } = input;
+  const [hasReset, setHasReset] = useState(false);
   const [imageDims, setImageDims] = useState<ImageDimProps | null>(null);
   const [tiles, setTiles] = useState<[TileState[], TileState[], TileState[]]>(
     initTileStates(tilesInitial),
   );
   const [whiteTileIx, setWhiteTileIx] = useState(0);
+  const [tilesFlatIx, setTilesFlatIx] = useState(tiles.flat().map((tile)=>tile.imgIx))
+  const [complete, setComplete] = useState(false);
 
+  const winningTilesIx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+
+  if(hasReset && winningTilesIx == tilesFlatIx) {
+    setComplete(true);
+  }
+  
+
+  if(!hasReset) {
+    resetTiles();
+    setHasReset(true);
+  }
 
   async function onImageLoad(event: { currentTarget: HTMLImageElement }) {
     const image = event.currentTarget;
@@ -110,8 +128,54 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
     });
   }
 
-  function resetTiles() {
-    setTiles(initTileStates(tilesInitial));
+  async function resetTiles() {
+    const state = tiles || [[], [], []];
+    let steps = 40;
+    let whiteTileIx;
+    let whiteTile;
+
+    while (steps > 0) {
+      const getWhiteTile = () =>
+        state.flat().filter((tile) => tile.empty)[0] || ({} as ITileState);
+
+      whiteTile = getWhiteTile();
+
+      whiteTileIx = state.flat().indexOf(whiteTile);
+
+      const tilesCanMove = [];
+
+      for (let rowIx = 0; rowIx < state.length; rowIx++) {
+        const row = state[rowIx] || [];
+
+        for (let tileIx = 0; tileIx < row.length; tileIx++) {
+          const tile = row[tileIx] || ({} as ITileState);
+
+          if (
+            tile.rowIx == whiteTile.rowIx &&
+            Math.abs(tile.tileIx - whiteTile.tileIx) == 1
+          ) {
+            tilesCanMove.push(tile);
+          }
+
+          if (
+            tile.tileIx == whiteTile.tileIx &&
+            Math.abs(tile.rowIx - whiteTile.rowIx) == 1
+          ) {
+            tilesCanMove.push(tile);
+          }
+        }
+      }
+
+      const {item: tile} = getRandomItem(tilesCanMove)
+
+      moveToWhiteTile({
+        tile, inputs: tile, whiteTile, whiteTileIx, tiles: state 
+      })
+
+      await delay(100);
+
+      steps -= 1;
+    }
   }
 
   function moveToWhiteTile(opts: {
@@ -119,13 +183,14 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
     inputs: onPositionChangeCallbackInputs;
     tile: ITileState;
     whiteTile: ITileState;
+    whiteTileIx: number;
   }) {
-    const { tiles, inputs, tile, whiteTile } = opts;
-    const oldWhiteTile = {...whiteTile};
-    const oldTile = {...tile};
+    const { tiles, inputs, tile, whiteTile, whiteTileIx } = opts;
+    const oldWhiteTile = { ...whiteTile };
+    const oldTile = { ...tile };
 
-    whiteTile.rowIx = tile.rowIx; 
-    whiteTile.tileIx = tile.tileIx
+    whiteTile.rowIx = tile.rowIx;
+    whiteTile.tileIx = tile.tileIx;
 
     tile.rowIx = inputs.rowIx;
     tile.tileIx = inputs.tileIx;
@@ -134,14 +199,17 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
     tiles[oldTile.rowIx][oldTile.tileIx] = whiteTile;
 
     setTiles(tiles);
+    setWhiteTileIx(whiteTileIx);
+    setTilesFlatIx(tiles.flat().map((tile)=> tile.imgIx))
   }
 
   function onTilePositionChange(inputs: onPositionChangeCallbackInputs) {
     const state = tiles || [[], [], []];
 
-    let whiteTile = state.flat().filter((tile) => tile.empty)[0];
+    let whiteTile =
+      state.flat().filter((tile) => tile.empty)[0] || ({} as ITileState);
 
-    setWhiteTileIx(state.flat().indexOf(whiteTile)); 
+    const whiteTileIx = state.flat().indexOf(whiteTile);
 
     for (let rowIx = 0; rowIx < state.length; rowIx++) {
       const row = state[rowIx] || [];
@@ -153,12 +221,37 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
           whiteTile = tile;
         }
 
-        if (tile.tileIx == inputs.tileIx && tile.rowIx == inputs.rowIx &&
+        if (
+          tile.tileIx == inputs.tileIx &&
+          tile.rowIx == inputs.rowIx &&
           whiteTile
         ) {
           if (!tile.empty) {
-            return moveToWhiteTile({ 
-              tiles, inputs, tile, whiteTile });
+            if (
+              tile.rowIx == whiteTile.rowIx &&
+              Math.abs(tile.tileIx - whiteTile.tileIx) == 1
+            ) {
+              moveToWhiteTile({
+                tiles,
+                inputs,
+                tile,
+                whiteTile,
+                whiteTileIx,
+              });
+            }
+
+            if (
+              tile.tileIx == whiteTile.tileIx &&
+              Math.abs(tile.rowIx - whiteTile.rowIx) == 1
+            ) {
+              moveToWhiteTile({
+                tiles,
+                inputs,
+                tile,
+                whiteTile,
+                whiteTileIx,
+              });
+            }
           }
         }
       }
@@ -166,7 +259,12 @@ const TileSlider: React.FC<TileSliderProps> = (input) => {
   }
 
   return (
-    <div className='w-80 my-12 mx-auto'>
+    <div className='relative w-80 my-12 mx-auto'>
+      {complete && 
+        <div>
+          <CheckCircleIcon className='absolute z-10 text-green-400'></CheckCircleIcon>
+        </div>
+      }
       {imageDims && tiles ? (
         <div>
           <div className='grid grid-cols-3 gap-2' datawhitetileix={whiteTileIx}>

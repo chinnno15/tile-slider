@@ -1,9 +1,3 @@
-import {
-  ArrowDownCircleIcon,
-  ArrowLeftCircleIcon,
-  ArrowRightCircleIcon,
-  ArrowUpCircleIcon,
-} from '@heroicons/react/24/solid';
 import { useState } from 'react';
 
 import { TileDirection } from './lib';
